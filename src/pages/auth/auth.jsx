@@ -1,33 +1,151 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaRegNewspaper, FaUserFriends, FaChalkboardTeacher, FaBriefcase, FaGamepad, FaMobileAlt } from 'react-icons/fa';
+import authService from '../../services/authService'; // Import auth service
 
 const BlueTechLogin = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: ''
+    userName: '',
+    confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Initialize auth service on component mount
+  useEffect(() => {
+    authService.initializeAuth();
+    
+    // Check if user is already authenticated
+    if (authService.isAuthenticated()) {
+      window.location.href = '/dashboard';
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    const { email, password, userName, confirmPassword } = formData;
+    
+    if (!email || !password) {
+      setError('Email và mật khẩu là bắt buộc');
+      return false;
+    }
+    
+    if (!isLogin) {
+      if (!userName) {
+        setError('Tên người dùng là bắt buộc');
+        return false;
+      }
+      if (!confirmPassword) {
+        setError('Xác nhận mật khẩu là bắt buộc');
+        return false;
+      }
+      if (password !== confirmPassword) {
+        setError('Mật khẩu xác nhận không khớp');
+        return false;
+      }
+      if (password.length < 6) {
+        setError('Mật khẩu phải có ít nhất 6 ký tự');
+        return false;
+      }
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Email không hợp lệ');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    if (!validateForm()) return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      if (isLogin) {
+        // Đăng nhập
+        const result = await authService.login(formData.email, formData.password);
+        if (result.success) {
+          setSuccess('Đăng nhập thành công!');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 2000);
+        }
+      } else {
+        // Đăng ký
+        const result = await authService.register({
+          userName: formData.userName,
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword
+        });
+        if (result.success) {
+          setSuccess('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+          await authService.sendVerificationEmail(formData.email);
+          setFormData({
+            email: '',
+            password: '',
+            userName: '',
+            confirmPassword: ''
+          });
+          setTimeout(() => {
+            setIsLogin(true);
+            setSuccess('');
+          }, 3000);
+        }
+      }
+    } catch (error) {
+      setError(error.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked');
+  const handleGoogleLogin = async () => {
+    try {
+      window.location.href = `${authService.getBaseUrl()}/oauth2/authorization/google`;
+    } catch {
+      setError('Đăng nhập Google thất bại');
+    }
   };
 
-  const handleMicrosoftLogin = () => {
-    console.log('Microsoft login clicked');
+  const handleMicrosoftLogin = async () => {
+    try {
+      window.location.href = `${authService.getBaseUrl()}/oauth2/authorization/microsoft`;
+    } catch {
+      setError('Đăng nhập Microsoft thất bại');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError('Vui lòng nhập email để đặt lại mật khẩu');
+      return;
+    }
+    try {
+      setLoading(true);
+      await authService.forgotPassword(formData.email);
+      setSuccess('Email đặt lại mật khẩu đã được gửi!');
+    } catch {
+      setError('Gửi email thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,17 +155,28 @@ const BlueTechLogin = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
           <div className="flex items-center space-x-8">
             <span className="text-3xl font-bold text-blue-600 tracking-tight">BlueTech</span>
-        
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+                setSuccess('');
+                setFormData({
+                  email: '',
+                  password: '',
+                  userName: '',
+                  confirmPassword: ''
+                });
+              }}
               className="px-5 py-2 border border-blue-600 text-blue-600 rounded-full font-medium bg-white hover:bg-blue-50 transition-colors"
+              disabled={loading}
             >
               {isLogin ? 'Tham gia ngay' : 'Đăng nhập'}
             </button>
             <button
               className="px-5 py-2 border border-blue-600 text-white bg-blue-600 rounded-full font-medium hover:bg-blue-700 hover:text-white transition-colors"
+              disabled={loading}
             >
               {isLogin ? 'Đăng nhập' : 'Đăng ký'}
             </button>
@@ -63,11 +192,25 @@ const BlueTechLogin = () => {
             <h2 className="text-4xl font-bold text-gray-800 mb-4 leading-tight text-center">
               {isLogin ? 'Chào mừng trở lại' : 'Chào mừng đến với cộng đồng chuyên gia của bạn'}
             </h2>
+            
+            {/* Error/Success Messages */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
+            
             <div className="flex flex-col space-y-4 mt-8">
               {/* Google Login Button */}
               <button
                 onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center px-4 py-3 border border-gray-400 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors text-base font-medium"
+                disabled={loading}
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-400 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -77,10 +220,12 @@ const BlueTechLogin = () => {
                 </svg>
                 Tiếp tục sử dụng dịch vụ bằng Google
               </button>
+              
               {/* Microsoft Login Button */}
               <button
                 onClick={handleMicrosoftLogin}
-                className="w-full flex items-center justify-center px-4 py-3 border border-gray-400 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors text-base font-medium"
+                disabled={loading}
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-400 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -90,36 +235,29 @@ const BlueTechLogin = () => {
                 </svg>
                 Tiếp tục với Microsoft
               </button>
+              
               {/* Divider */}
               <div className="flex items-center my-2">
                 <div className="flex-grow border-t border-gray-300" />
                 <span className="mx-4 text-gray-500 text-sm">hoặc</span>
                 <div className="flex-grow border-t border-gray-300" />
               </div>
+              
               {/* Email Form */}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 {!isLogin && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="firstName"
-                      placeholder="Tên"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="lastName"
-                      placeholder="Họ"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      required
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    name="userName"
+                    placeholder="Tên người dùng"
+                    value={formData.userName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required={!isLogin}
+                    disabled={loading}
+                  />
                 )}
+                
                 <input
                   type="email"
                   name="email"
@@ -128,7 +266,9 @@ const BlueTechLogin = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   required
+                  disabled={loading}
                 />
+                
                 <input
                   type="password"
                   name="password"
@@ -137,28 +277,71 @@ const BlueTechLogin = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   required
+                  disabled={loading}
                 />
+                
+                {!isLogin && (
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Xác nhận mật khẩu"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    required={!isLogin}
+                    disabled={loading}
+                  />
+                )}
+                
                 <button
                   type="submit"
-                  className="w-full border border-blue-600 text-blue-600 bg-white py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors text-base"
+                  disabled={loading}
+                  className="w-full border border-blue-600 text-blue-600 bg-white py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>{isLogin ? 'Đăng nhập' : 'Đăng ký'}</>
+                  )}
                 </button>
               </form>
+              
               {isLogin && (
                 <div className="text-center">
-                  <a href="#" className="text-blue-600 hover:underline text-sm font-medium">
+                  <button
+                    onClick={handleForgotPassword}
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                    disabled={loading}
+                  >
                     Quên mật khẩu?
-                  </a>
+                  </button>
                 </div>
               )}
+              
               <div className="text-center text-sm text-gray-600">
                 {isLogin ? (
                   <p>
                     Bạn mới sử dụng BlueTech?{' '}
                     <button
-                      onClick={() => setIsLogin(false)}
+                      onClick={() => {
+                        setIsLogin(false);
+                        setError('');
+                        setSuccess('');
+                        setFormData({
+                          email: '',
+                          password: '',
+                          userName: '',
+                          confirmPassword: ''
+                        });
+                      }}
                       className="text-blue-600 hover:underline font-semibold"
+                      disabled={loading}
                     >
                       Tham gia ngay
                     </button>
@@ -167,14 +350,26 @@ const BlueTechLogin = () => {
                   <p>
                     Đã có tài khoản?{' '}
                     <button
-                      onClick={() => setIsLogin(true)}
+                      onClick={() => {
+                        setIsLogin(true);
+                        setError('');
+                        setSuccess('');
+                        setFormData({
+                          email: '',
+                          password: '',
+                          userName: '',
+                          confirmPassword: ''
+                        });
+                      }}
                       className="text-blue-600 hover:underline font-semibold"
+                      disabled={loading}
                     >
                       Đăng nhập
                     </button>
                   </p>
                 )}
               </div>
+              
               {!isLogin && (
                 <div className="text-xs text-gray-500 text-center mt-2">
                   Khi nhấp vào Tiếp tục để tham gia hoặc đăng nhập, bạn đồng ý với{' '}
@@ -186,6 +381,7 @@ const BlueTechLogin = () => {
             </div>
           </div>
         </div>
+        
         {/* Illustration Section */}
         <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center">
           <img
