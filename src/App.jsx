@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
-import FriendRequestsPage from './pages/FriendRequestsPage';
+import FriendRequestsPage from './pages/friend/FriendsAppLayout';
 import BlueTechLogin from './pages/auth/auth';
 
 function App() {
@@ -10,17 +10,7 @@ function App() {
       <Routes>
         <Route path="/auth" element={<BlueTechLogin />} />
         <Route
-          path="/*"
-          element={
-            <div className="flex flex-col h-screen font-sans">
-              <Header />
-              <div className="flex flex-1">
-                <Sidebar />
-                <FriendRequestsPage />
-              </div>
-            </div>
-          }
-        />
+          path="/friends" element ={<FriendRequestsPage/>}/>
       </Routes>
     </Router>
   );

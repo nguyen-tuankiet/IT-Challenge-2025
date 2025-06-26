@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import FriendCard from '../components/FriendCard/FriendCard';
+import FriendCard from './FriendCard';
 
 const mockData = [
   { name: 'Nguyen Huyen', mutuals: 1, image: 'https://randomuser.me/api/portraits/men/32.jpg' },
