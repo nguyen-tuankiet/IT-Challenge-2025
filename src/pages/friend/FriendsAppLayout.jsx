@@ -3,6 +3,7 @@ import Header from '../../components/Layout/Header';
 import FriendSidebar from '../../components/Layout/Sidebar';
 import FriendRequestsSection from '../../components/Friend/FriendRequestsPage';
 import SuggestedFriendsSection from '../../components/Friend/SuggestedFriendsCardPage';
+import AllFriendsPage from '../../components/Friend/AllFriendsPage';
 
 const FriendsAppLayout = () => {
   const [activeSection, setActiveSection] = useState('requests');
@@ -27,12 +28,7 @@ const FriendsAppLayout = () => {
       case 'suggestions':
         return <SuggestedFriendsSection />;
       case 'all-friends':
-        return (
-          <div className="ml-4 mt-4">
-            <h2 className="text-xl font-semibold mb-4">Tất cả bạn bè</h2>
-            <p className="text-gray-500">Chức năng này sẽ được phát triển sau...</p>
-          </div>
-        );
+        return <AllFriendsPage />;
       case 'birthdays':
         return (
           <div className="ml-4 mt-4">
