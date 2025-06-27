@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X } from 'lucide-react';
 
 export default function Post({data}) {
+    if (!data) return null;
     const {
         authorName,
         avatar,
@@ -16,6 +17,8 @@ export default function Post({data}) {
     const [liked, setLiked] = useState(false);
     const [reactionCount, setReactionCount] = useState(likes || 0);
 
+    if (!data || !authorName) return null;
+    
     const handleLike = () => {
         setLiked(!liked);
         setReactionCount(prev => liked ? prev - 1 : prev + 1);
