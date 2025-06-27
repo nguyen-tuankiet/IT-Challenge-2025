@@ -26,9 +26,9 @@ const BlueTechLogin = () => {
     
     // Check if user is already authenticated
     if (authService.isAuthenticated()) {
-      window.location.href = '/dashboard';
+      navigate('/home', { replace: true }); // Sửa từ '/dashboard' thành '/home' và dùng navigate
     }
-  }, []);
+  }, [navigate]);
 
   // Clear form when switching between login/register
   useEffect(() => {
@@ -91,18 +91,30 @@ const BlueTechLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    
     setLoading(true);
     setError('');
     setSuccess('');
+    
     try {
       if (isLogin) {
         // Đăng nhập
         const result = await authService.login(formData.email, formData.password);
         if (result.success) {
-          setSuccess('Đăng nhập thành công!');
+          // Hiển thị thông báo chào mừng
+          const user = result.data.user; // Lấy user từ response trực tiếp
+          if (user && user.userName) {
+            setSuccess(`Chào mừng, ${user.userName}! Đăng nhập thành công!`);
+          } else {
+            setSuccess('Đăng nhập thành công!');
+          }
+          
+          // Chuyển hướng sau 1.5 giây
           setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 2000);
+            navigate('/home', { replace: true });
+          }, 1500);
+        } else {
+          setError(result.message || 'Đăng nhập thất bại');
         }
       } else {
         // Đăng ký
@@ -112,22 +124,33 @@ const BlueTechLogin = () => {
           password: formData.password,
           confirmPassword: formData.confirmPassword
         });
+        
         if (result.success) {
           setSuccess('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
-          await authService.sendVerificationEmail(formData.email);
+          
+          try {
+            await authService.sendVerificationEmail(formData.email);
+          } catch (emailError) {
+            console.warn('Failed to send verification email:', emailError);
+          }
+          
           setFormData({
             email: '',
             password: '',
             userName: '',
             confirmPassword: ''
           });
+          
           setTimeout(() => {
             navigate('/login');
             setSuccess('');
           }, 3000);
+        } else {
+          setError(result.message || 'Đăng ký thất bại');
         }
       }
     } catch (error) {
+      console.error('Auth error:', error);
       setError(error.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setLoading(false);
