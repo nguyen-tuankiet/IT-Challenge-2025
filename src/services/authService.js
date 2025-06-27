@@ -1,6 +1,6 @@
 import api from './api';
 
-class callApi {
+class AuthService {
   async login(email, password) {
     try {
       const response = await api.post('/auth/login', {
@@ -104,6 +104,11 @@ class callApi {
     }
   }
 
+  // Get base URL for OAuth
+  getBaseUrl() {
+    return api.defaults.baseURL.replace('/feed-service/api', '');
+  }
+
   // Logout user
   logout() {
     // Clear stored data
@@ -176,8 +181,8 @@ class callApi {
   }
 }
 
-// Create singleton instance
-const authService = new callApi();
+// Create single instance
+const authService = new AuthService();
 
 // Setup request interceptor to add auth token
 api.interceptors.request.use(
@@ -216,4 +221,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-export default new callApi();
+
+// Export the single instance
+export default authService;

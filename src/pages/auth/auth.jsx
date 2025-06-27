@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FaRegNewspaper, FaUserFriends, FaChalkboardTeacher, FaBriefcase, FaGamepad, FaMobileAlt } from 'react-icons/fa';
 import authService from '../../services/authService'; // Import auth service
 
 const BlueTechLogin = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Determine if we're on login or register page based on URL
+  const isLogin = location.pathname === '/login';
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,6 +29,18 @@ const BlueTechLogin = () => {
       window.location.href = '/dashboard';
     }
   }, []);
+
+  // Clear form when switching between login/register
+  useEffect(() => {
+    setFormData({
+      email: '',
+      password: '',
+      userName: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setSuccess('');
+  }, [location.pathname]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -104,7 +122,7 @@ const BlueTechLogin = () => {
             confirmPassword: ''
           });
           setTimeout(() => {
-            setIsLogin(true);
+            navigate('/login');
             setSuccess('');
           }, 3000);
         }
@@ -148,6 +166,15 @@ const BlueTechLogin = () => {
     }
   };
 
+  // Function to toggle between login and register
+  const toggleAuthMode = () => {
+    if (isLogin) {
+      navigate('/register');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -158,17 +185,7 @@ const BlueTechLogin = () => {
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setSuccess('');
-                setFormData({
-                  email: '',
-                  password: '',
-                  userName: '',
-                  confirmPassword: ''
-                });
-              }}
+              onClick={toggleAuthMode}
               className="px-5 py-2 border border-blue-600 text-blue-600 rounded-full font-medium bg-white hover:bg-blue-50 transition-colors"
               disabled={loading}
             >
@@ -329,17 +346,7 @@ const BlueTechLogin = () => {
                   <p>
                     Bạn mới sử dụng BlueTech?{' '}
                     <button
-                      onClick={() => {
-                        setIsLogin(false);
-                        setError('');
-                        setSuccess('');
-                        setFormData({
-                          email: '',
-                          password: '',
-                          userName: '',
-                          confirmPassword: ''
-                        });
-                      }}
+                      onClick={toggleAuthMode}
                       className="text-blue-600 hover:underline font-semibold"
                       disabled={loading}
                     >
@@ -350,17 +357,7 @@ const BlueTechLogin = () => {
                   <p>
                     Đã có tài khoản?{' '}
                     <button
-                      onClick={() => {
-                        setIsLogin(true);
-                        setError('');
-                        setSuccess('');
-                        setFormData({
-                          email: '',
-                          password: '',
-                          userName: '',
-                          confirmPassword: ''
-                        });
-                      }}
+                      onClick={toggleAuthMode}
                       className="text-blue-600 hover:underline font-semibold"
                       disabled={loading}
                     >
