@@ -2,7 +2,7 @@ import React from 'react';
 import Post from '../components/Post/Post';
 import Header from "../components/Layout/Header.jsx";
 import Sidebar from "../components/Layout/Sidebar.jsx";
-import FriendRequestsPage from "./FriendRequestsPage.jsx";
+import FriendRequestsPage from "../components/Friend/FriendRequestsPage.jsx";
 
 const postsMock = [
     {
