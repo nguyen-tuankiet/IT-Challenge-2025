@@ -73,7 +73,7 @@ const HomePage = () => {
     return (
         <div className="flex flex-col h-screen font-sans">
             <Header />
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden mt-[56px]">
                 <div className="flex-[1] min-w-0">
                     <Sidebar />
                 </div>

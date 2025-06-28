@@ -60,9 +60,27 @@ class FriendService {
         }
     }
 
-    // Accept friend request (using addFriend)
-    async acceptFriendRequest(senderId, receiverId) {
-        return this.addFriend(senderId, receiverId);
+
+    // Accept friend invite
+    async acceptInvite(userId, inviteId) {
+        try {
+            const response = await api.post(`/user/${userId}/invite/${inviteId}/accept`);
+            return response.data;
+        } catch (error) {
+            console.error('Error accepting invite:', error);
+            throw error;
+        }
+    }
+
+    // Decline friend invite
+    async declineInvite(userId, inviteId) {
+        try {
+            const response = await api.post(`/user/${userId}/invite/${inviteId}/decline`);
+            return response.data;
+        } catch (error) {
+            console.error('Error declining invite:', error);
+            throw error;
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FriendCard from './FriendCard';
-import friendService from '../../services/FriendService';
+import friendService from '../../services/friendService';
 
 const mockData = [
   { name: 'Nguyen Huyen', mutuals: 1, image: 'https://randomuser.me/api/portraits/men/32.jpg' },
@@ -76,34 +76,14 @@ const FriendRequestsPage = ({ friendRequests = null }) => {
     fetchFriendRequests();
   }, [friendRequests]);
 
-  const handleAcceptRequest = async (requestId, senderId) => {
-    try {
-      const userId = getCurrentUserId();
-      if (!userId) return;
-
-      await friendService.addFriend(senderId, userId);
-      
-      // Remove the accepted request from the list
-      setRequests(prev => prev.filter(req => req.id !== requestId));
-      
-      // You might want to show a success message here
+  const handleInviteAction = (action, inviteId) => {
+    // Remove the invite from the list after action
+    setRequests(prev => prev.filter(req => req.id !== inviteId));
+    
+    if (action === 'accepted') {
       console.log('Friend request accepted successfully');
-    } catch (err) {
-      console.error('Error accepting friend request:', err);
-      setError('Không thể chấp nhận lời mời kết bạn. Vui lòng thử lại.');
-    }
-  };
-
-  const handleRejectRequest = async (requestId) => {
-    try {
-      // Remove the rejected request from the list
-      // Note: You might need to implement a reject API endpoint
-      setRequests(prev => prev.filter(req => req.id !== requestId));
-      
-      console.log('Friend request rejected');
-    } catch (err) {
-      console.error('Error rejecting friend request:', err);
-      setError('Không thể từ chối lời mời kết bạn. Vui lòng thử lại.');
+    } else if (action === 'declined') {
+      console.log('Friend request declined successfully');
     }
   };
 
@@ -140,9 +120,8 @@ const FriendRequestsPage = ({ friendRequests = null }) => {
             avatar={friend.image} 
             name={friend.name} 
             mutualFriends={friend.mutuals}
-            onAccept={() => handleAcceptRequest(friend.id, friend.senderId)}
-            onReject={() => handleRejectRequest(friend.id)}
-            showActions={true}
+            inviteId={friend.id}
+            onInviteAction={handleInviteAction}
           />
         ))}
       </div>
