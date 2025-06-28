@@ -111,7 +111,7 @@ export default function Header() {
       {showPopup && (
         <div 
           ref={popupRef}
-          className="absolute right-4 top-16 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
+          className="absolute right-4 top-12 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
         >
           {/* User Profile Section */}
           <div className="px-4 py-3 border-b border-gray-200">

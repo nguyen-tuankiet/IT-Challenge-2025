@@ -80,13 +80,13 @@ const AllFriendsPage = ({ allFriends = null }) => {
 
   const displayedFriends = showAll ? filteredFriends : filteredFriends.slice(0, 10);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Đang tải danh sách bạn bè...</div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <div className="text-gray-500">Đang tải danh sách bạn bè...</div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div>
