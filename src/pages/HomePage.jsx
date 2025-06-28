@@ -1,7 +1,7 @@
 import React from 'react';
 import Post from '../components/Post/Post';
 import Header from "../components/Layout/Header.jsx";
-import Sidebar from "../components/Layout/Sidebar.jsx";
+import Sidebar from "../components/Layout/SideBarFriend.jsx";
 import CreatePostModal from "../components/Post/CreatePostModal.jsx";
 import RightSidebar from "../components/Layout/RightSideBar.jsx";
 

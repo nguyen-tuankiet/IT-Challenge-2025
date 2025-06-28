@@ -1,15 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../components/Layout/Header';
-import FriendSidebar from '../../components/Layout/Sidebar';
+import FriendSidebar from '../../components/Layout/SideBarFriend';
 import FriendRequestsSection from '../../components/Friend/FriendRequestsPage';
 import SuggestedFriendsSection from '../../components/Friend/SuggestedFriendsCardPage';
 import AllFriendsPage from '../../components/Friend/AllFriendsPage';
 
 const FriendsAppLayout = () => {
-  const [activeSection, setActiveSection] = useState('requests');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('home');
+
+  // Map URL paths to section IDs
+  const pathToSection = {
+    '/friends': 'home',
+    '/friends/requests': 'requests',
+    '/friends/suggestions': 'suggestions',
+    '/friends/list': 'all-friends'
+  };
+
+  // Map section IDs to URL paths
+  const sectionToPath = {
+    'home': '/friends',
+    'requests': '/friends/requests',
+    'suggestions': '/friends/suggestions',
+    'all-friends': '/friends/list'
+  };
+
+  // Update active section based on current URL
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const section = pathToSection[currentPath];
+    if (section) {
+      setActiveSection(section);
+    } else {
+      // Default to home if path doesn't match
+      setActiveSection('home');
+    }
+  }, [location.pathname]);
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
+    const path = sectionToPath[sectionId];
+    if (path) {
+      navigate(path);
+    }
   };
 
   const renderContent = () => {

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaFacebook } from 'react-icons/fa';
 import { FiSearch, FiVideo, FiUsers, FiPlusCircle, FiBell, FiSettings, FiHelpCircle, FiMoon, FiLogOut, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { BsMessenger, BsPeople } from 'react-icons/bs';
@@ -8,6 +9,7 @@ import { MdFeedback, MdKeyboard } from 'react-icons/md';
 import authService from '../../services/authService';
 
 export default function Header() {
+  const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
   const [user, setUser] = useState(null);
   const popupRef = useRef(null);
@@ -41,6 +43,14 @@ export default function Header() {
     setShowPopup(!showPopup);
   };
 
+  const handleHomeClick = () => {
+    navigate('/home');
+  };
+
+  const handleFriendsClick = () => {
+    navigate('/friends');
+  };
+
   return (
     <div className="relative">
       <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm sticky top-0 z-50">
@@ -57,9 +67,15 @@ export default function Header() {
 
         {/* Middle nav */}
         <div className="flex gap-16">
-          <HiOutlineHome className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
+          <HiOutlineHome 
+            className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" 
+            onClick={handleHomeClick}
+          />
           <FiVideo className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiUsers className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
+          <FiUsers 
+            className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" 
+            onClick={handleFriendsClick}
+          />
           <FiPlusCircle className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
         </div>
 

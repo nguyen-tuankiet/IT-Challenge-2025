@@ -10,10 +10,12 @@ function App() {
         <Route path="/login" element={<BlueTechLogin />} />
         <Route path="/register" element={<BlueTechLogin />} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
-        <Route path="/friends" element={<FriendRequestsPage/>} />
+        <Route path="/friends" element={<FriendRequestsPage />} />
+        <Route path="/friends/requests" element={<FriendRequestsPage />} />
+        <Route path="/friends/suggestions" element={<FriendRequestsPage />} />
+        <Route path="/friends/list" element={<FriendRequestsPage />} />
         <Route path="/home" element={<HomePage/>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
-
       </Routes>
     </Router>
   );
