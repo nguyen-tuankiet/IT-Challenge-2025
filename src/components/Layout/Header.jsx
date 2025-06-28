@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaFacebook } from 'react-icons/fa';
 import { FiSearch, FiVideo, FiUsers, FiPlusCircle, FiBell, FiSettings, FiHelpCircle, FiMoon, FiLogOut, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { BsMessenger, BsPeople } from 'react-icons/bs';
@@ -8,6 +9,8 @@ import { MdFeedback, MdKeyboard } from 'react-icons/md';
 import authService from '../../services/authService';
 
 export default function Header() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPopup, setShowPopup] = useState(false);
   const [user, setUser] = useState(null);
   const popupRef = useRef(null);
@@ -41,10 +44,18 @@ export default function Header() {
     setShowPopup(!showPopup);
   };
 
+  const handleHomeClick = () => {
+    navigate('/home');
+  };
+
+  const handleFriendsClick = () => {
+    navigate('/friends');
+  };
+
   return (
     <div className="relative">
-      <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm sticky top-0 z-50">
-        {/* Logo + Search */}
+      <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm fixed top-0 left-0 w-full z-50">
+        {/* Logo + Search */} 
         <div className="flex items-center gap-2">
           <div className="bg-blue-600 rounded-full p-2">
             <FaFacebook className="text-white text-2xl" />
@@ -57,10 +68,26 @@ export default function Header() {
 
         {/* Middle nav */}
         <div className="flex gap-16">
-          <HiOutlineHome className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiVideo className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiUsers className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiPlusCircle className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
+          <div className="flex flex-col items-center cursor-pointer" onClick={handleHomeClick}>
+            <HiOutlineHome 
+              className={`text-2xl ${location.pathname === '/home' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`}
+            />
+            {location.pathname === '/home' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer">
+            <FiVideo className={`text-2xl ${location.pathname === '/videos' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`} />
+            {location.pathname === '/videos' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={handleFriendsClick}>
+            <FiUsers 
+              className={`text-2xl ${location.pathname === '/friends' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`}
+            />
+            {location.pathname === '/friends' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer">
+            <FiPlusCircle className={`text-2xl ${location.pathname === '/create' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`} />
+            {location.pathname === '/create' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
         </div>
 
         {/* Right icons */}
@@ -95,7 +122,7 @@ export default function Header() {
       {showPopup && (
         <div 
           ref={popupRef}
-          className="absolute right-4 top-16 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
+          className="absolute right-4 top-12 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
         >
           {/* User Profile Section */}
           <div className="px-4 py-3 border-b border-gray-200">

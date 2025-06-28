@@ -30,7 +30,7 @@ export default function FriendSidebar({ activeSection, onSectionChange }) {
   ];
 
   return (
-    <div className="w-full max-w-xs p-1 shadow-md bg-white rounded-xl">
+    <div className="w-full max-w-xs p-1 shadow-md bg-white fixed top-[56px] left-0 h-[calc(100vh-56px)] overflow-y-auto z-40 border-none">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-xl font-bold mt-4 ml-4">Bạn bè</h1>
         <div className="bg-gray-200 p-2 rounded-full cursor-pointer mt-4 mr-4">

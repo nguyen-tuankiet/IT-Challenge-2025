@@ -1,7 +1,7 @@
 import React from 'react';
 import Post from '../components/Post/Post';
 import Header from "../components/Layout/Header.jsx";
-import Sidebar from "../components/Layout/Sidebar.jsx";
+import Sidebar from "../components/Layout/SideBarFriend.jsx";
 import CreatePostModal from "../components/Post/CreatePostModal.jsx";
 import RightSidebar from "../components/Layout/RightSideBar.jsx";
 
@@ -73,7 +73,7 @@ const HomePage = () => {
     return (
         <div className="flex flex-col h-screen font-sans">
             <Header />
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden mt-[56px]">
                 <div className="flex-[1] min-w-0">
                     <Sidebar />
                 </div>
