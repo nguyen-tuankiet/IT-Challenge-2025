@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X } from 'lucide-react';
+import PostImages from "./PostImages.jsx";
+import PostDetail from "./PostDetail.jsx";
 
 export default function Post({data}) {
     if (!data) return null;
@@ -14,8 +16,65 @@ export default function Post({data}) {
         comments,
         shares,
     } = data;
+
+    const mockComments = [
+        {
+            id: 1,
+            author: 'Hùng',
+            avatar: 'https://randomuser.me/api/portraits/men/10.jpg',
+            content: 'Bài viết rất hay!',
+            timestamp: '2 giờ trước',
+            likes: 5,
+            replies: [
+                {
+                    id: 11,
+                    author: 'Lan',
+                    avatar: 'https://randomuser.me/api/portraits/women/20.jpg',
+                    content: 'Đồng ý với bạn!',
+                    timestamp: '1 giờ trước',
+                    likes: 2,
+                    replies: []
+                }
+            ]
+        },
+        {
+            id: 2,
+            author: 'Lan',
+            avatar: 'https://randomuser.me/api/portraits/women/30.jpg',
+            content: 'Tuyệt vời 👏',
+            timestamp: '1 giờ trước',
+            likes: 3,
+            replies: []
+        },
+        {
+            id: 3,
+            author: 'Minh',
+            avatar: 'https://randomuser.me/api/portraits/men/40.jpg',
+            content: 'Cảm ơn bạn đã chia sẻ.',
+            timestamp: '30 phút trước',
+            likes: 1,
+            replies: [
+                {
+                    id: 31,
+                    author: 'Hương',
+                    avatar: 'https://randomuser.me/api/portraits/women/25.jpg',
+                    content: 'Chuẩn luôn nha!',
+                    timestamp: '10 phút trước',
+                    likes: 0,
+                    replies: []
+                }
+            ]
+        }
+    ];
+
+    const detailData = {
+        ...data,
+        comments: mockComments,
+    };
+
     const [liked, setLiked] = useState(false);
     const [reactionCount, setReactionCount] = useState(likes || 0);
+    const [showDetail, setShowDetail] = useState(false);
 
     if (!data || !authorName) return null;
     
@@ -42,7 +101,7 @@ export default function Post({data}) {
                         <div className="flex items-center space-x-1 text-sm text-gray-500">
                             <span>{timestamp}</span>
                             <span>·</span>
-                            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                            <span className="text-sm align-middle">🌍</span>
                         </div>
                     </div>
                 </div>
@@ -60,13 +119,7 @@ export default function Post({data}) {
             </div>
 
             {/* Image */}
-            <div className="relative">
-                <img
-                    src={image}
-                    alt="post"
-                    className="w-full h-64 object-cover"
-                />
-            </div>
+            {image && <PostImages image={image} />}
 
             {/* Reaction Summary */}
             <div className="px-4 py-2 border-b border-gray-200">
@@ -96,10 +149,20 @@ export default function Post({data}) {
                         <span className="font-medium">Thích</span>
                     </button>
 
-                    <button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">
+                    <button
+                        onClick={() => setShowDetail(true)}
+                        className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                    >
                         <MessageCircle className="w-5 h-5" />
                         <span className="font-medium">Bình luận</span>
                     </button>
+                    {showDetail && (
+                        <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden">
+                            <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] w-full max-w-2xl p-2">
+                                <PostDetail data={detailData} onClose={() => setShowDetail(false)} />
+                            </div>
+                        </div>
+                    )}
 
                     <button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600">
                         <Share2 className="w-5 h-5" />
@@ -108,5 +171,6 @@ export default function Post({data}) {
                 </div>
             </div>
         </div>
+
     );
 }
