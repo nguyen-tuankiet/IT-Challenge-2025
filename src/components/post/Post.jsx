@@ -4,6 +4,7 @@ import PostImages from "./PostImages.jsx";
 import PostDetail from "./PostDetail.jsx";
 
 export default function Post({data}) {
+    if (!data) return null;
     const {
         authorName,
         avatar,
@@ -75,6 +76,8 @@ export default function Post({data}) {
     const [reactionCount, setReactionCount] = useState(likes || 0);
     const [showDetail, setShowDetail] = useState(false);
 
+    if (!data || !authorName) return null;
+    
     const handleLike = () => {
         setLiked(!liked);
         setReactionCount(prev => liked ? prev - 1 : prev + 1);

@@ -1,6 +1,6 @@
 import api from './api';
 
-class callApi {
+class AuthService {
   async login(email, password) {
     try {
       const response = await api.post('/auth/login', {
@@ -8,12 +8,13 @@ class callApi {
         password
       });
       
-      if (response.data.success) {
+      // Kiểm tra response theo cấu trúc API của bạn
+      if (response.data.code === 200 && response.data.data) {
         const { token, user } = response.data.data;
         
-        // Store token and user info
+        // Store token and userID only
         localStorage.setItem('accessToken', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('userID', user.id);
         
         // Set default authorization header for future requests
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -21,7 +22,7 @@ class callApi {
         return { success: true, data: { token, user } };
       }
       
-      return { success: false, message: 'Login failed' };
+      return { success: false, message: response.data.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
       throw this.handleApiError(error);
@@ -33,11 +34,11 @@ class callApi {
     try {
       const response = await api.post('/auth/register', userData);
       
-      if (response.data.success) {
+      if (response.data.code === 200) {
         return { success: true, data: response.data.data };
       }
       
-      return { success: false, message: 'Registration failed' };
+      return { success: false, message: response.data.message || 'Registration failed' };
     } catch (error) {
       console.error('Registration error:', error);
       throw this.handleApiError(error);
@@ -77,7 +78,7 @@ class callApi {
     try {
       const response = await api.get('/auth/refresh-token');
       
-      if (response.data.success) {
+      if (response.data.code === 200 && response.data.data) {
         const newToken = response.data.data;
         localStorage.setItem('accessToken', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -104,23 +105,40 @@ class callApi {
     }
   }
 
+  // Get base URL for OAuth
+  getBaseUrl() {
+    return api.defaults.baseURL.replace('/feed-service/api', '');
+  }
+
   // Logout user
   logout() {
     // Clear stored data
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userID');
     
     // Remove authorization header
     delete api.defaults.headers.common['Authorization'];
     
-    // Redirect to login page
-    window.location.href = '/login';
+    // Redirect to login page - chỉ redirect nếu không phải đang ở trang login
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
   }
 
-  // Get current user
-  getCurrentUser() {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+  // Get current user info by userID
+  async getCurrentUserID() {
+    const userID = localStorage.getItem('userID');
+    if (!userID) return null;
+    try {
+      const response = await api.get(`/user/${userID}`);
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Get current user info error:', error);
+      return null;
+    }
   }
 
   // Get access token
@@ -131,8 +149,8 @@ class callApi {
   // Check if user is authenticated
   isAuthenticated() {
     const token = this.getAccessToken();
-    const user = this.getCurrentUser();
-    return !!(token && user);
+    const userID = this.getCurrentUserID();
+    return !!(token && userID);
   }
 
   // Initialize auth (call this on app startup)
@@ -176,8 +194,8 @@ class callApi {
   }
 }
 
-// Create singleton instance
-const authService = new callApi();
+// Create single instance
+const authService = new AuthService();
 
 // Setup request interceptor to add auth token
 api.interceptors.request.use(
@@ -216,4 +234,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-export default new callApi();
+
+// Export the single instance
+export default authService;
