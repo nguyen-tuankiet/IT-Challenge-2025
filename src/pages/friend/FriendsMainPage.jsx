@@ -5,12 +5,15 @@ import SuggestedFriendsSection from '../../components/Friend/SuggestedFriendsCar
 const FriendsMainPage = () => {
   const [currentSection, setCurrentSection] = useState('requests'); // 'requests' or 'suggestions'
 
+  // Get current user ID from localStorage
+  const currentUserId = localStorage.getItem('userID');
+
   const renderCurrentSection = () => {
     switch(currentSection) {
       case 'requests':
         return <FriendRequestsSection />;
       case 'suggestions':
-        return <SuggestedFriendsSection />;
+        return <SuggestedFriendsSection userId={currentUserId} />;
       default:
         return <FriendRequestsSection />;
     }

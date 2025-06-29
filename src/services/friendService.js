@@ -83,6 +83,22 @@ class FriendService {
         }
     }
 
+    // Get friend suggestions
+    async getFriendSuggestions(userId, limit = 10, maxDistance = 50.0) {
+        try {
+            const request = {
+                userId: userId,
+                limit: limit,
+                maxDistance: maxDistance
+            };
+            const response = await api.post('/friend/suggestions', request);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching friend suggestions:', error);
+            throw error;
+        }
+    }
+
 }
 
 // Export singleton instance

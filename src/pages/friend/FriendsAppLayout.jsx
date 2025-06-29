@@ -11,6 +11,9 @@ const FriendsAppLayout = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('home');
 
+  // Get current user ID from localStorage
+  const currentUserId = localStorage.getItem('userID');
+
   // Map URL paths to section IDs
   const pathToSection = {
     '/friends': 'home',
@@ -54,14 +57,14 @@ const FriendsAppLayout = () => {
           <div>
             <FriendRequestsSection />
             <div className="mt-8">
-              <SuggestedFriendsSection />
+              <SuggestedFriendsSection userId={currentUserId} />
             </div>
           </div>
         );
       case 'requests':
         return <FriendRequestsSection />;
       case 'suggestions':
-        return <SuggestedFriendsSection />;
+        return <SuggestedFriendsSection userId={currentUserId} />;
       case 'all-friends':
         return <AllFriendsPage />;
       case 'birthdays':
@@ -84,25 +87,23 @@ const FriendsAppLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100  ">
-      <Header />
-      
-      <div className="flex gap-4  mt-[56px] ml-[25px]">
-        {/* Sidebar */}
-        <div className="flex-shrink-0 w-[280px]">
-          <FriendSidebar 
-            activeSection={activeSection} 
-            onSectionChange={handleSectionChange} 
-          />
-        </div>
-        
-        {/* Main content */}
-        <div className="flex-1 bg-white shadow-sm min-h-[600px]">
-          {renderContent()}
-        </div>
+  <div className="h-screen flex flex-col bg-gray-100">
+    <Header />
+    <div className="flex-1 flex gap-4 mt-[56px] ml-[25px] h-0">
+      {/* Sidebar */}
+      <div className="flex-shrink-0 w-[280px] h-full">
+        <FriendSidebar 
+          activeSection={activeSection} 
+          onSectionChange={handleSectionChange} 
+        />
+      </div>
+      {/* Main content */}
+      <div className="flex-1 bg-white shadow-sm h-full">
+        {renderContent()}
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default FriendsAppLayout;
