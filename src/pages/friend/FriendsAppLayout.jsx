@@ -87,7 +87,7 @@ const FriendsAppLayout = () => {
   };
 
   return (
-  <div className="h-screen flex flex-col bg-gray-100">
+  <div className="h-full flex flex-col bg-gray-100">
     <Header />
     <div className="flex-1 flex gap-4 mt-[56px] ml-[25px] h-0">
       {/* Sidebar */}
@@ -98,7 +98,7 @@ const FriendsAppLayout = () => {
         />
       </div>
       {/* Main content */}
-      <div className="flex-1 bg-white shadow-sm h-full">
+      <div className="flex-1 bg-white  h-full">
         {renderContent()}
       </div>
     </div>
