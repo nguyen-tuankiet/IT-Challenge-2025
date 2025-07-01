@@ -6,6 +6,7 @@ import CreatePostModal from "../components/post/CreatePostModal.jsx";
 import RightSidebar from "../components/Layout/RightSideBar.jsx";
 import PostService from '../services/PostService'; // Adjust path as needed
 import authService from '../services/authService'; // Import authService
+import LeftSideBarHome from "../components/Layout/LeftSideBarHome";
 
 const HomePage = () => {
     const [posts, setPosts] = useState([]);
@@ -123,7 +124,7 @@ const HomePage = () => {
     };
 
     // Handle post creation callback
-    const handlePostCreated = async (newPost) => {
+    const handlePostCreated = async () => {
         console.log('New post created, refreshing feed...');
         // Small delay to ensure the post is saved on the backend
         setTimeout(() => {
@@ -163,7 +164,7 @@ const HomePage = () => {
             <div className="flex flex-1 overflow-hidden mt-[56px] w-full justify-center">
                 {/* Sidebar trái */}
                 <div className="w-[320px] flex-shrink-0">
-                    <Sidebar />
+                    <LeftSideBarHome />
                 </div>
                 {/* Feed ở giữa */}
                 <div className="flex-1 flex justify-center min-w-0">
