@@ -32,7 +32,7 @@ export default function RightSidebar() {
     );
 
     return (
-        <div className="w-72 bg-white h-screen overflow-y-auto border-l border-gray-200">
+        <div className="w-full max-w-xs p-1 shadow-md bg-white fixed top-[56px] right-0 h-[calc(100vh-56px)] overflow-y-auto z-40 border-none">
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
                 <h2 className="text-gray-800 text-lg font-semibold mb-4">Người liên hệ</h2>

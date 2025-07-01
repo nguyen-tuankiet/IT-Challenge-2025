@@ -2,7 +2,7 @@ import React from 'react';
 
 const AllFriendsCard = ({ avatar, name, mutualFriends }) => {
   return (
-    <div className="w-[220px] bg-white rounded-md friendcard-shadow border border-gray-200 shadow-lg hover:shadow-xl transition-all">
+    <div className="w-[220px] bg-gray-100 rounded-md friendcard-shadow border border-gray-200 shadow-lg hover:shadow-xl transition-all">
       <img
         src={avatar}
         alt={name}

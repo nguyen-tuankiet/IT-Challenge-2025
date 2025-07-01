@@ -113,6 +113,16 @@ const SuggestedFriendsSection = ({ userId, suggestedFriends: propSuggestedFriend
     );
   }
 
+  // Hiển thị thông báo nếu không có gợi ý bạn bè nào
+  if (!loading && (!suggestedFriends || suggestedFriends.length === 0)) {
+    return (
+      <div className="ml-4 mr-4">
+        <h2 className="text-xl font-semibold mb-4 mt-4">Những người bạn có thể biết</h2>
+        <div className="text-gray-500 text-center py-8">Không có gợi ý bạn bè nào.</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4 ml-4 mt-4">Những người bạn có thể biết</h2>
