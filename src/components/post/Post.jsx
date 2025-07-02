@@ -170,7 +170,19 @@ export default function Post({data}) {
 
     const handleSelectReaction = async (type) => {
         setShowReactionPopup(false);
-        if (!liked) {
+        if (liked && userReactionTypeState === type) {
+            // Bỏ reaction
+            setLiked(false);
+            setReactionCount(prev => prev - 1);
+            setReactionCountsState(prev => {
+                const next = { ...prev };
+                if (next[type]) next[type]--;
+                return next;
+            });
+            setUserReactionTypeState(null);
+            await PostService.reactToPost(id, 'UNLIKE', userId);
+        } else if (!liked) {
+            // Lần đầu reaction
             setLiked(true);
             setReactionCount(prev => prev + 1);
             setReactionCountsState(prev => {
@@ -178,8 +190,10 @@ export default function Post({data}) {
                 next[type] = (next[type] || 0) + 1;
                 return next;
             });
+            setUserReactionTypeState(type);
+            await PostService.reactToPost(id, type, userId);
         } else {
-            // Đổi loại reaction: giảm loại cũ, tăng loại mới
+            // Đổi sang reaction khác
             setReactionCountsState(prev => {
                 const prevType = userReactionTypeState;
                 const next = { ...prev };
@@ -187,9 +201,9 @@ export default function Post({data}) {
                 next[type] = (next[type] || 0) + 1;
                 return next;
             });
+            setUserReactionTypeState(type);
+            await PostService.reactToPost(id, type, userId);
         }
-        setUserReactionTypeState(type);
-        await PostService.reactToPost(id, type, userId);
     };
 
     // Format content to handle line breaks and 'Xem thêm'
