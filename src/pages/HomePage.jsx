@@ -1,98 +1,205 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Post from '../components/Post/Post';
 import Header from "../components/Layout/Header.jsx";
-import Sidebar from "../components/Layout/Sidebar.jsx";
-import CreatePostModal from "../components/Post/CreatePostModal.jsx";
+import Sidebar from "../components/Layout/SideBarFriend.jsx";
+import CreatePostModal from "../components/post/CreatePostModal.jsx";
 import RightSidebar from "../components/Layout/RightSideBar.jsx";
-
-const postsMock = [
-    {
-        id: 1,
-        authorName: 'Thanh Diệu',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s',
-        isFollowing: true,
-        timestamp: '20 tháng 6 lúc 08:03',
-        content: 'Sau cơn mưa trời lại sáng :))))))',
-        image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-        likes: 56,
-        comments: 4,
-        shares: 1,
-    },
-    {
-        id: 2,
-        authorName: 'Nguyễn Minh',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s',
-        isFollowing: false,
-        timestamp: '19 tháng 6 lúc 21:15',
-        content: 'Cà phê hôm nay hơi đắng, nhưng trời lại đẹp.',
-        image: 'https://images.unsplash.com/photo-1523289333742-be1143f6b766',
-        likes: 112,
-        comments: 9,
-        shares: 2,
-    },
-    {
-        id: 3,
-        authorName: 'Linh Trần',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s',
-        isFollowing: true,
-        timestamp: '18 tháng 6 lúc 17:45',
-        content: 'Một ngày năng suất tại coworking space',
-        image: 'https://images.pexels.com/photos/1264210/pexels-photo-1264210.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
-        likes: 83,
-        comments: 7,
-        shares: 0,
-    },
-    {
-        id: 4,
-        authorName: 'Bảo Khánh',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s',
-        isFollowing: false,
-        timestamp: '17 tháng 6 lúc 13:20',
-        content: 'Đi bộ dưới mưa, nghe playlist cũ, lòng nhẹ tênh...',
-        image: 'https://file.hstatic.net/200000503583/file/tao-dang-chup-anh-hoang-hon__16__10333e3c0dfd420687e73b8e01e74342.jpg',
-        likes: 132,
-        comments: 18,
-        shares: 5,
-    },
-    {
-        id: 5,
-        authorName: 'Phương Thảo',
-        avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s',
-        isFollowing: true,
-        timestamp: '16 tháng 6 lúc 09:00',
-        content: 'Mỗi ngày là một món quà',
-        image: 'https://statictuoitre.mediacdn.vn/thumb_w/640/2017/12-1512755474968.jpg',
-        likes: 200,
-        comments: 22,
-        shares: 8,
-    },
-];
-
+import PostService from '../services/PostService'; // Adjust path as needed
+import authService from '../services/authService'; // Import authService
+import LeftSideBarHome from "../components/Layout/LeftSideBarHome";
 
 const HomePage = () => {
-    return (
-        <div className="flex flex-col h-screen font-sans">
-            <Header />
-            <div className="flex flex-1 overflow-hidden">
-                <div className="flex-[1] min-w-0">
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [userInfo, setUserInfo] = useState(null); // Add userInfo state
+    const loaderRef = useRef(null);
+
+    // Fetch user info on mount
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const user = await authService.getCurrentUserID();
+                setUserInfo(user);
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
+    // Function to fetch posts
+    const fetchPosts = async (pageNum = 0, reset = false) => {
+        try {
+            setLoading(true);
+            const response = await PostService.getFeed(pageNum, 10, 'createdAt', 'DESC');
+            
+            if (response.code === 200) {
+                const newPosts = response.data.map(post => ({
+                    id: post.id,
+                    authorName: post.owner.userName,
+                    avatar: post.owner.avatarUrl,
+                    isFollowing: false, // You might want to add this logic based on your follow system
+                    timestamp: new Date(post.createdAt).toLocaleDateString('vi-VN', {
+                        day: 'numeric',
+                        month: 'long',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    content: post.textContent,
+                    image: post.image && post.image.length > 0 ? post.image.map(img => img.url) : null,
+                    likes: post.noOfReactions,
+                    comments: post.noOfComments,
+                    shares: 0, // Add shares if available in your API
+                    views: post.noOfViews,
+                    isReacted: post.isReacted,
+                    reactionCounts: post.reactionCounts,
+                    originalPost: post // Keep original post data for any additional needs
+                }));
+
+                if (reset) {
+                    setPosts(newPosts);
+                    setPage(0); // Reset page counter
+                } else {
+                    setPosts(prev => [...prev, ...newPosts]);
+                }
+
+                // Check if there are more posts to load
+                setHasMore(newPosts.length === 10);
+            } else {
+                setError('Failed to fetch posts');
+            }
+        } catch (err) {
+            console.error('Error fetching posts:', err);
+            setError('Error loading posts');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load initial posts
+    useEffect(() => {
+        fetchPosts(0, true);
+    }, []);
+
+    // Infinite scroll: load more when reaching bottom
+    const handleObserver = useCallback((entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && !loading && hasMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchPosts(nextPage, false);
+        }
+    }, [loading, hasMore, page]);
+
+    useEffect(() => {
+        const option = {
+            root: null,
+            rootMargin: '20px',
+            threshold: 1.0
+        };
+        const observer = new window.IntersectionObserver(handleObserver, option);
+        if (loaderRef.current) observer.observe(loaderRef.current);
+        return () => {
+            if (loaderRef.current) observer.unobserve(loaderRef.current);
+        };
+    }, [handleObserver]);
+
+    // Function to refresh posts - enhanced version
+    const refreshPosts = async () => {
+        console.log('Refreshing posts...');
+        setError(null); // Clear any existing errors
+        setPage(0);
+        setHasMore(true);
+        
+        try {
+            await fetchPosts(0, true);
+            console.log('Posts refreshed successfully');
+        } catch (error) {
+            console.error('Error refreshing posts:', error);
+            setError('Không thể tải lại bài viết');
+        }
+    };
+
+    // Handle post creation callback
+    const handlePostCreated = async () => {
+        console.log('New post created, refreshing feed...');
+        // Small delay to ensure the post is saved on the backend
+        setTimeout(() => {
+            refreshPosts();
+        }, 500);
+    };
+
+    if (error) {
+        return (
+            <div className="flex flex-col min-h-screen font-sans bg-[#f0f2f5]">
+                <Header />
+                <div className="flex flex-1 overflow-hidden mt-[56px]">
                     <Sidebar />
-                </div>
-
-                <div className="flex-[2] min-w-0 overflow-y-auto px-6 py-4">
-                    <div className="mb-6">
-                        <CreatePostModal
-                            avatar='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjN7iTZzRb7Z_r3Qmfd4iD4PhVIDwbbaC0Aw&s'
-                            name='Thanh Diệu'
-                        />
-                    </div>
-                    {postsMock.map((post) => (
-                        <div key={post.id} className="mb-6">
-                            <Post data={post} />
+                    <div className="flex-[1] min-w-0">
+                        <div className="w-full max-w-2xl p-4">
+                            <div className="bg-white rounded-lg shadow p-6 text-center">
+                                <p className="text-red-500 mb-4">{error}</p>
+                                <button 
+                                    onClick={refreshPosts}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Đang tải...' : 'Thử lại'}
+                                </button>
+                            </div>
                         </div>
-                    ))}
+                    </div>
+                    <RightSidebar />
                 </div>
+            </div>
+        );
+    }
 
-                <div className="flex-[1] min-w-0">
+    return (
+        <div className="flex flex-col min-h-screen font-sans bg-[#f0f2f5]">
+            <Header />
+            <div className="flex flex-1 overflow-hidden mt-[56px] w-full justify-center">
+                {/* Sidebar trái */}
+                <div className="w-[320px] flex-shrink-0">
+                    <LeftSideBarHome />
+                </div>
+                {/* Feed ở giữa */}
+                <div className="flex-1 flex justify-center min-w-0">
+                    <div className="w-full max-w-[600px] px-4 py-4 mb-4">
+                        <div className="mb-4 bg-white rounded-lg ">
+                            <CreatePostModal 
+                                onPostCreated={handlePostCreated} 
+                                avatar={userInfo?.avatarUrl} 
+                                name={userInfo?.userName} 
+                            />
+                        </div>
+                        {loading && posts.length === 0 ? (
+                            <div className="text-center">
+                                <p>Đang tải bài viết...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {posts.map((post) => (
+                                    <div key={post.id} className="mb-4 bg-white rounded-lg">
+                                        <Post data={post} />
+                                    </div>
+                                ))}
+                                {/* Infinite scroll loader */}
+                                <div ref={loaderRef} />
+                                {posts.length === 0 && !loading && (
+                                    <div className="text-center">
+                                        <p className="text-gray-500">Chưa có bài viết nào</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+                {/* Sidebar phải */}
+                <div className="w-[320px] flex-shrink-0 ">
                     <RightSidebar />
                 </div>
             </div>

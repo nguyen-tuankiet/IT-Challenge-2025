@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaFacebook } from 'react-icons/fa';
-import { FiSearch, FiVideo, FiUsers, FiPlusCircle, FiBell, FiSettings, FiHelpCircle, FiMoon, FiLogOut, FiChevronRight, FiChevronDown } from 'react-icons/fi';
+import { FiSearch, FiVideo, FiUsers, FiPlusCircle, FiBell, FiSettings, FiHelpCircle, FiMoon, FiLogOut, FiChevronRight, FiChevronDown, FiArrowLeft } from 'react-icons/fi';
 import { BsMessenger, BsPeople } from 'react-icons/bs';
 import { HiOutlineHome } from 'react-icons/hi';
 import { CgMenuGridR } from 'react-icons/cg';
@@ -8,7 +9,11 @@ import { MdFeedback, MdKeyboard } from 'react-icons/md';
 import authService from '../../services/authService';
 
 export default function Header() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPopup, setShowPopup] = useState(false);
+  const [showDisplaySettings, setShowDisplaySettings] = useState(false);
+  const [darkMode, setDarkMode] = useState('auto'); // 'off', 'on', 'auto'
   const [user, setUser] = useState(null);
   const popupRef = useRef(null);
   const avatarRef = useRef(null);
@@ -28,6 +33,7 @@ export default function Header() {
       if (popupRef.current && !popupRef.current.contains(event.target) && 
           avatarRef.current && !avatarRef.current.contains(event.target)) {
         setShowPopup(false);
+        setShowDisplaySettings(false);
       }
     }
 
@@ -39,12 +45,33 @@ export default function Header() {
 
   const handleAvatarClick = () => {
     setShowPopup(!showPopup);
+    setShowDisplaySettings(false);
+  };
+
+  const handleDisplaySettingsClick = () => {
+    setShowDisplaySettings(true);
+  };
+
+  const handleBackClick = () => {
+    setShowDisplaySettings(false);
+  };
+
+  const handleDarkModeChange = (mode) => {
+    setDarkMode(mode);
+  };
+
+  const handleHomeClick = () => {
+    navigate('/home');
+  };
+
+  const handleFriendsClick = () => {
+    navigate('/friends');
   };
 
   return (
     <div className="relative">
-      <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm sticky top-0 z-50">
-        {/* Logo + Search */}
+      <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm fixed top-0 left-0 w-full z-50">
+        {/* Logo + Search */} 
         <div className="flex items-center gap-2">
           <div className="bg-blue-600 rounded-full p-2">
             <FaFacebook className="text-white text-2xl" />
@@ -57,10 +84,26 @@ export default function Header() {
 
         {/* Middle nav */}
         <div className="flex gap-16">
-          <HiOutlineHome className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiVideo className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiUsers className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
-          <FiPlusCircle className="text-gray-500 text-2xl cursor-pointer hover:text-blue-600" />
+          <div className="flex flex-col items-center cursor-pointer" onClick={handleHomeClick}>
+            <HiOutlineHome 
+              className={`text-2xl ${location.pathname === '/home' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`}
+            />
+            {location.pathname === '/home' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer">
+            <FiVideo className={`text-2xl ${location.pathname === '/videos' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`} />
+            {location.pathname === '/videos' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={handleFriendsClick}>
+            <FiUsers 
+              className={`text-2xl ${location.pathname === '/friends' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`}
+            />
+            {location.pathname === '/friends' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
+          <div className="flex flex-col items-center cursor-pointer">
+            <FiPlusCircle className={`text-2xl ${location.pathname === '/create' ? 'text-blue-600' : 'text-gray-500'} hover:text-blue-600`} />
+            {location.pathname === '/create' && <div className="h-1 w-8 bg-blue-600 rounded-t-lg mt-1" />}
+          </div>
         </div>
 
         {/* Right icons */}
@@ -92,10 +135,10 @@ export default function Header() {
       </header>
 
       {/* Avatar Popup Menu */}
-      {showPopup && (
+      {showPopup && !showDisplaySettings && (
         <div 
           ref={popupRef}
-          className="absolute right-4 top-16 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
+          className="absolute right-4 top-12 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
         >
           {/* User Profile Section */}
           <div className="px-4 py-3 border-b border-gray-200">
@@ -136,7 +179,7 @@ export default function Header() {
               <FiChevronRight className="text-black" />
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer">
+            <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer" onClick={handleDisplaySettingsClick}>
               <div className="bg-gray-200 p-2 rounded-full">
                 <FiMoon className="text-lg text-black" />
               </div>
@@ -182,6 +225,81 @@ export default function Header() {
               <span>Xem thêm</span>
               <span>•</span>
               <span>Meta © 2025</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Display Settings Popup */}
+      {showPopup && showDisplaySettings && (
+        <div 
+          ref={popupRef}
+          className="absolute right-4 top-12 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
+            <button onClick={handleBackClick} className="p-1 hover:bg-gray-100 rounded-full">
+              <FiArrowLeft className="text-lg text-black" />
+            </button>
+            <span className="text-lg font-bold text-black">Màn hình & trợ năng</span>
+          </div>
+
+          {/* Dark Mode Section */}
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-gray-800 p-2 rounded-full">
+                <FiMoon className="text-lg text-white" />
+              </div>
+              <div>
+                <div className="text-black font-semibold">Chế độ tối</div>
+                <div className="text-sm text-gray-500">
+                  Điều chỉnh giao diện của Facebook để giảm độ chói và cho đôi mắt được nghỉ ngơi.
+                </div>
+              </div>
+            </div>
+
+            {/* Dark Mode Options */}
+            <div className="space-y-2 ml-11">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-black font-medium">Tắt</span>
+                <input
+                  type="radio"
+                  name="darkMode"
+                  value="off"
+                  checked={darkMode === 'off'}
+                  onChange={() => handleDarkModeChange('off')}
+                  className="w-5 h-5 text-blue-600"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-black font-medium">Bật</span>
+                <input
+                  type="radio"
+                  name="darkMode"
+                  value="on"
+                  checked={darkMode === 'on'}
+                  onChange={() => handleDarkModeChange('on')}
+                  className="w-5 h-5 text-blue-600"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <div className="text-black font-medium">Tự động</div>
+                  <div className="text-sm text-gray-500">
+                    Chúng tôi sẽ tự động điều chỉnh màn hình theo cài đặt hệ thống trên thiết bị của bạn.
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  name="darkMode"
+                  value="auto"
+                  checked={darkMode === 'auto'}
+                  onChange={() => handleDarkModeChange('auto')}
+                  className="w-5 h-5 text-blue-600 ml-3 flex-shrink-0"
+                />
+              </label>
             </div>
           </div>
         </div>

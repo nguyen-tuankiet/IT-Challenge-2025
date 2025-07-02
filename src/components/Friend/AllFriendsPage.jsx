@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AllFriendsCard from './AllFriendsCard';
+import friendService from '../../services/friendService';
 
 const mockAllFriends = [
   { name: 'Nguyễn Văn Minh', mutuals: 25, image: 'https://randomuser.me/api/portraits/men/1.jpg' },
@@ -12,27 +13,80 @@ const mockAllFriends = [
   { name: 'Ngô Thị Hương', mutuals: 24, image: 'https://randomuser.me/api/portraits/women/11.jpg' },
   { name: 'Đinh Hoàng Long', mutuals: 17, image: 'https://randomuser.me/api/portraits/men/13.jpg' },
   { name: 'Hoàng Thị Linh', mutuals: 21, image: 'https://randomuser.me/api/portraits/women/14.jpg' },
-  { name: 'Trịnh Văn Hùng', mutuals: 26, image: 'https://randomuser.me/api/portraits/men/16.jpg' },
-  { name: 'Phan Thị Ngọc', mutuals: 15, image: 'https://randomuser.me/api/portraits/women/17.jpg' },
-  { name: 'Lý Minh Khôi', mutuals: 30, image: 'https://randomuser.me/api/portraits/men/18.jpg' },
-  { name: 'Võ Thị Trang', mutuals: 23, image: 'https://randomuser.me/api/portraits/women/19.jpg' },
-  { name: 'Đặng Văn Quân', mutuals: 27, image: 'https://randomuser.me/api/portraits/men/21.jpg' },
-  { name: 'Dương Thị Yến', mutuals: 20, image: 'https://randomuser.me/api/portraits/women/22.jpg' },
-  { name: 'Tạ Hoàng Phúc', mutuals: 29, image: 'https://randomuser.me/api/portraits/men/23.jpg' },
-  { name: 'Chu Thị Bích', mutuals: 14, image: 'https://randomuser.me/api/portraits/women/24.jpg' },
-  { name: 'Mạc Văn Thịnh', mutuals: 31, image: 'https://randomuser.me/api/portraits/men/26.jpg' },
-  { name: 'Ông Thị Kim', mutuals: 13, image: 'https://randomuser.me/api/portraits/women/27.jpg' },
 ];
 
-const AllFriendsPage = ({ allFriends = mockAllFriends }) => {
+const AllFriendsPage = ({ allFriends = null }) => {
+  const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredFriends = allFriends.filter(friend =>
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // If allFriends prop is provided, use it
+        if (allFriends) {
+          setFriends(allFriends);
+          setLoading(false);
+          return;
+        }
+
+        // Get user ID from localStorage
+        const userId = localStorage.getItem('userID');
+        
+        if (!userId) {
+          console.warn('No user ID found in localStorage, using mock data');
+          setFriends(mockAllFriends);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch friends from API
+        const response = await friendService.getFriendsWithMutualInfo(userId);
+        
+        if (response && response.data) {
+          // Transform API response to match component expectations
+          const transformedFriends = response.data.map(friend => ({
+            id: friend.userId || friend.id,
+            name: friend.userName || friend.userName || 'Unknown User',
+            mutuals: friend.mutualFriendsCount || friend.mutuals || 0,
+            image: friend.avatarUrl || friend.image ||  'https://th.bing.com/th/id/R.22dbc0f5e5f5648613f0d1de3ea7ae0a?rik=k6HQ45uVGe81rw&pid=ImgRaw&r=0'
+          }));
+          
+          setFriends(transformedFriends);
+        } else {
+          // If no data returned, use mock data
+          setFriends(mockAllFriends);
+        }
+      } catch (err) {
+        console.error('Error fetching friends:', err);
+        setError('Không thể tải danh sách bạn bè. Đang sử dụng dữ liệu mẫu.');
+        setFriends(mockAllFriends);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFriends();
+  }, [allFriends]);
+
+  const filteredFriends = friends.filter(friend =>
     friend.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const displayedFriends = showAll ? filteredFriends : filteredFriends.slice(0, 10);
+
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <div className="text-gray-500">Đang tải danh sách bạn bè...</div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div>
@@ -50,10 +104,16 @@ const AllFriendsPage = ({ allFriends = mockAllFriends }) => {
         </div>
       </div>
 
+      {error && (
+        <div className="mx-4 mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ml-4 mr-4">
         {displayedFriends.map((friend, index) => (
           <AllFriendsCard 
-            key={index} 
+            key={friend.id || index} 
             avatar={friend.image} 
             name={friend.name} 
             mutualFriends={friend.mutuals} 
@@ -75,6 +135,12 @@ const AllFriendsPage = ({ allFriends = mockAllFriends }) => {
       {filteredFriends.length === 0 && searchTerm && (
         <div className="text-center mt-8">
           <p className="text-gray-500">Không tìm thấy bạn bè nào với từ khóa "{searchTerm}"</p>
+        </div>
+      )}
+
+      {friends.length === 0 && !loading && (
+        <div className="text-center mt-8">
+          <p className="text-gray-500">Bạn chưa có bạn bè nào</p>
         </div>
       )}
     </div>
