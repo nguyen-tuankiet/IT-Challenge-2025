@@ -85,6 +85,18 @@ class PostService {
         }
     }
 
+    async getPostByOwner(postId, reactionType) {
+        try {
+            const response = await api.post(`/post/${postId}/reaction`, {
+                reactionType
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error reacting to post:', error);
+            throw error;
+        }
+    }
+
 }
 
 export default new PostService();

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import FriendRequestsPage from './pages/friend/FriendsAppLayout';
 import BlueTechLogin from './pages/auth/auth';
 import HomePage from './pages/HomePage';
+import Profile from "./pages/profile/Profile.jsx";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/friends/suggestions" element={<FriendRequestsPage />} />
         <Route path="/friends/list" element={<FriendRequestsPage />} />
         <Route path="/home" element={<HomePage/>} />
+        <Route path="/profile" element={<Profile/>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
