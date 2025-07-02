@@ -43,6 +43,29 @@ class CommentService {
         const response = await api.post('/comment', reply);
         return response.data;
     }
+
+    // React to comment
+    async reactToComment(commentId, reactionType, userId) {
+        const response = await api.post(`/comments/${commentId}/reactions`, null, {
+            params: {
+                type: reactionType,
+                userId: userId
+            }
+        });
+        return response.data;
+    }
+
+    // Get reaction counts for a comment
+    async getCommentReactionCounts(commentId) {
+        const response = await api.get(`/comments/${commentId}/reactions/counts`);
+        return response.data;
+    }
+
+    // Get user's reaction for a comment
+    async getUserCommentReaction(commentId, userId) {
+        const response = await api.get(`/comments/${commentId}/reactions/user/${userId}`);
+        return response.data;
+    }
 }
 
 export default new CommentService(); 
