@@ -73,10 +73,13 @@ class PostService {
     }
 
     // React to post
-    async reactToPost(postId, reactionType) {
+    async reactToPost(postId, reactionType, userId) {
         try {
-            const response = await api.post(`/post/${postId}/reaction`, {
-                reactionType
+            const response = await api.post(`/posts/${postId}/reactions`, null, {
+                params: {
+                    type: reactionType,
+                    userId: userId
+                }
             });
             return response.data;
         } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X, Globe, Users, Lock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X, Globe, Users, Lock, AlertTriangle, Eye } from 'lucide-react';
 import PostImages from "./PostImages.jsx";
 import PostDetail from "./PostDetail.jsx";
 import PostService from '../../services/PostService'; // Adjust path as needed
@@ -14,7 +14,39 @@ const CreatePostModalStyle = `
 `;
 
 export default function Post({data}) {
-    if (!data) return null;
+    // Move all hooks to the top
+    const [liked, setLiked] = useState(data?.isReacted || false);
+    const [reactionCount, setReactionCount] = useState(data?.likes || 0);
+    const [showDetail, setShowDetail] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showFullContent, setShowFullContent] = useState(false);
+    const [showReactionPopup, setShowReactionPopup] = useState(false);
+    const [reactionPopupTimeout, setReactionPopupTimeout] = useState(null);
+    const [isHoveringPopup, setIsHoveringPopup] = useState(false);
+    const [showViolationPost, setShowViolationPost] = useState(false);
+    const userId = localStorage.getItem('userID'); // Lấy userId từ localStorage
+    const [userReactionTypeState, setUserReactionTypeState] = useState(data?.userReactionType || null);
+    const [reactionCountsState, setReactionCountsState] = useState(data?.reactionCounts || {});
+    const reactionMap = {
+        'LIKE': '👍',
+        'LOVE': '❤️',
+        'HAHA': '😂',
+        'WOW': '😮',
+        'SAD': '😢',
+        'ANGRY': '😡'
+    };
+
+    // Map tên reaction
+    const reactionLabelMap = {
+        'LIKE': 'Thích',
+        'LOVE': 'Yêu thích',
+        'HAHA': 'Haha',
+        'WOW': 'Wow',
+        'SAD': 'Buồn',
+        'ANGRY': 'Phẫn nộ'
+    };
+
+    if (!data || !data.authorName) return null;
     
     const {
         id,
@@ -24,13 +56,9 @@ export default function Post({data}) {
         timestamp,
         content,
         image,
-        likes,
         comments,
         shares,
         views,
-        isReacted,
-        reactionCounts,
-        originalPost,
         accessMode
     } = data;
 
@@ -89,15 +117,6 @@ export default function Post({data}) {
         comments: mockComments,
     };
 
-    const [liked, setLiked] = useState(isReacted || false);
-    const [reactionCount, setReactionCount] = useState(likes || 0);
-    const [showDetail, setShowDetail] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showFullContent, setShowFullContent] = useState(false);
-    const [showReactionPopup, setShowReactionPopup] = useState(false);
-    const [reactionPopupTimeout, setReactionPopupTimeout] = useState(null);
-    const [isHoveringPopup, setIsHoveringPopup] = useState(false);
-
     const reactionOptions = [
         { type: 'LIKE', emoji: '👍' },
         { type: 'LOVE', emoji: '❤️' },
@@ -106,25 +125,43 @@ export default function Post({data}) {
         { type: 'SAD', emoji: '😢' },
         { type: 'ANGRY', emoji: '😡' },
     ];
-
-    if (!data || !authorName) return null;
     
     const handleLike = async () => {
         if (isLoading) return;
-        
         try {
             setIsLoading(true);
             // Optimistic update
             const newLiked = !liked;
             setLiked(newLiked);
             setReactionCount(prev => newLiked ? prev + 1 : prev - 1);
-            
+            if (newLiked) {
+                // Nếu like, tăng LIKE, giảm loại cũ nếu có
+                setReactionCountsState(prev => {
+                    const prevType = userReactionTypeState;
+                    const next = { ...prev };
+                    if (prevType && next[prevType]) next[prevType]--;
+                    next['LIKE'] = (next['LIKE'] || 0) + 1;
+                    return next;
+                });
+                setUserReactionTypeState('LIKE');
+            } else {
+                // Nếu unlike, giảm loại cũ
+                setReactionCountsState(prev => {
+                    const prevType = userReactionTypeState;
+                    const next = { ...prev };
+                    if (prevType && next[prevType]) next[prevType]--;
+                    return next;
+                });
+                setUserReactionTypeState(null);
+            }
             // Call API
-            await PostService.reactToPost(id, newLiked ? 'LIKE' : 'UNLIKE');
+            await PostService.reactToPost(id, newLiked ? 'LIKE' : 'UNLIKE', userId);
         } catch (error) {
             // Revert on error
             setLiked(liked);
             setReactionCount(reactionCount);
+            setUserReactionTypeState(data?.userReactionType || null);
+            setReactionCountsState(data?.reactionCounts || {});
             console.error('Error reacting to post:', error);
         } finally {
             setIsLoading(false);
@@ -133,9 +170,40 @@ export default function Post({data}) {
 
     const handleSelectReaction = async (type) => {
         setShowReactionPopup(false);
-        setLiked(type === 'LIKE');
-        setReactionCount(prev => prev + 1); // You may want to update this logic
-        await PostService.reactToPost(id, type);
+        if (liked && userReactionTypeState === type) {
+            // Bỏ reaction
+            setLiked(false);
+            setReactionCount(prev => prev - 1);
+            setReactionCountsState(prev => {
+                const next = { ...prev };
+                if (next[type]) next[type]--;
+                return next;
+            });
+            setUserReactionTypeState(null);
+            await PostService.reactToPost(id, 'UNLIKE', userId);
+        } else if (!liked) {
+            // Lần đầu reaction
+            setLiked(true);
+            setReactionCount(prev => prev + 1);
+            setReactionCountsState(prev => {
+                const next = { ...prev };
+                next[type] = (next[type] || 0) + 1;
+                return next;
+            });
+            setUserReactionTypeState(type);
+            await PostService.reactToPost(id, type, userId);
+        } else {
+            // Đổi sang reaction khác
+            setReactionCountsState(prev => {
+                const prevType = userReactionTypeState;
+                const next = { ...prev };
+                if (prevType && next[prevType]) next[prevType]--;
+                next[type] = (next[type] || 0) + 1;
+                return next;
+            });
+            setUserReactionTypeState(type);
+            await PostService.reactToPost(id, type, userId);
+        }
     };
 
     // Format content to handle line breaks and 'Xem thêm'
@@ -162,35 +230,23 @@ export default function Post({data}) {
     // Display reaction emojis based on reactionCounts
     const getReactionEmojis = () => {
         const reactions = [];
-        if (reactionCounts && Object.keys(reactionCounts).length > 0) {
-            // Map reaction types to emojis
-            const reactionMap = {
-                'LIKE': '👍',
-                'LOVE': '❤️',
-                'HAHA': '😂',
-                'WOW': '😮',
-                'SAD': '😢',
-                'ANGRY': '😡'
-            };
-            
-            Object.keys(reactionCounts).forEach(type => {
-                if (reactionCounts[type] > 0 && reactionMap[type]) {
+        if (reactionCountsState && Object.keys(reactionCountsState).length > 0) {
+            Object.keys(reactionCountsState).forEach(type => {
+                if (reactionCountsState[type] > 0 && reactionMap[type]) {
                     reactions.push(
-                        <div key={type} className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-xs">
+                        <div key={type} className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs">
                             {reactionMap[type]}
                         </div>
                     );
                 }
             });
         }
-        
         // Default reactions if none exist
         if (reactions.length === 0 && reactionCount > 0) {
             reactions.push(
                 <div key="like" className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">👍</div>
             );
         }
-        
         return reactions;
     };
 
@@ -254,13 +310,49 @@ export default function Post({data}) {
 
             {/* Post Content */}
             <div className="px-4 pb-3">
-                <div className="text-gray-900 leading-relaxed whitespace-pre-wrap">
-                    {formatContent(content)}
-                </div>
+                {data.violationDetected === true && !showViolationPost ? (
+                    <div className="relative rounded-lg overflow-hidden min-h-[220px]">
+                        {/* Blurred Content */}
+                        <div className="filter blur-sm opacity-30 pointer-events-none min-h-[360px]">
+                            <div className="text-gray-900 leading-relaxed whitespace-pre-wrap">
+                                {formatContent(content)}
+                            </div>
+                            {image && <PostImages image={image} />}
+                        </div>
+                        {/* Warning Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+                            <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-sm w-full min-h-[180px] flex flex-col justify-center mx-4">
+                                <div className="flex justify-center mb-4">
+                                    <div className="bg-red-100 p-3 rounded-full">
+                                        <AlertTriangle className="w-8 h-8 text-red-600" />
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                    Cảnh báo nội dung
+                                </h3>
+                                <p className="text-gray-600 mb-4">
+                                    Bài viết này có thể chứa nội dung bạo lực hoặc không phù hợp. 
+                                    Bạn có chắc chắn muốn xem không?
+                                </p>
+                                <button
+                                    onClick={() => setShowViolationPost(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 mx-auto"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    Tiếp tục xem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="text-gray-900 leading-relaxed whitespace-pre-wrap">
+                            {formatContent(content)}
+                        </div>
+                        {image && <PostImages image={image} />}
+                    </>
+                )}
             </div>
-
-            {/* Image */}
-            {image && <PostImages image={image} />}
 
             {/* Reaction Summary */}
             <div className="px-4 py-2 border-b border-gray-200">
@@ -297,8 +389,12 @@ export default function Post({data}) {
                                 liked ? 'text-blue-500' : 'text-gray-600'
                             } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                            <span className="font-medium">Thích</span>
+                            {liked && userReactionTypeState && reactionMap[userReactionTypeState] ? (
+                                <span className="text-xl">{reactionMap[userReactionTypeState]}</span>
+                            ) : (
+                                <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
+                            )}
+                            <span className="font-medium">{liked && userReactionTypeState && reactionLabelMap[userReactionTypeState] ? reactionLabelMap[userReactionTypeState] : 'Thích'}</span>
                         </button>
                         {showReactionPopup && (
                             <div

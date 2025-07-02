@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Post from '../components/Post/Post';
+import Post from '../components/post/Post';
 import Header from "../components/Layout/Header.jsx";
 import Sidebar from "../components/Layout/SideBarFriend.jsx";
 import CreatePostModal from "../components/post/CreatePostModal.jsx";
@@ -34,7 +34,8 @@ const HomePage = () => {
     const fetchPosts = async (pageNum = 0, reset = false) => {
         try {
             setLoading(true);
-            const response = await PostService.getFeed(pageNum, 10, 'createdAt', 'DESC');
+            const userId = localStorage.getItem('userID');
+            const response = await PostService.getFeed(pageNum, 10, 'createdAt', 'DESC', userId);
             
             if (response.code === 200) {
                 const newPosts = response.data.map(post => ({
@@ -55,7 +56,9 @@ const HomePage = () => {
                     shares: 0, // Add shares if available in your API
                     views: post.noOfViews,
                     isReacted: post.isReacted,
+                    userReactionType: post.userReactionType,
                     reactionCounts: post.reactionCounts,
+                    violationDetected: post.violationDetected,
                     originalPost: post // Keep original post data for any additional needs
                 }));
 
