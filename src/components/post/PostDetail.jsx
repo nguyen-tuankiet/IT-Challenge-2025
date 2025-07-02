@@ -11,20 +11,110 @@ export default function PostDetail({ data, onClose }) {
         timestamp,
         content,
         image,
-        likes,
         comments: initialComments,
         shares,
     } = data;
 
-    const [liked, setLiked] = useState(false);
-    const [reactionCount, setReactionCount] = useState(likes || 0);
+    const [userReactionTypeState, setUserReactionTypeState] = useState(data?.userReactionType || null);
+    const [reactionCountsState, setReactionCountsState] = useState(data?.reactionCounts || {});
+    const reactionMap = {
+        'LIKE': '👍',
+        'LOVE': '❤️',
+        'HAHA': '😂',
+        'WOW': '😮',
+        'SAD': '😢',
+        'ANGRY': '😡'
+    };
+    const reactionLabelMap = {
+        'LIKE': 'Thích',
+        'LOVE': 'Yêu thích',
+        'HAHA': 'Haha',
+        'WOW': 'Wow',
+        'SAD': 'Buồn',
+        'ANGRY': 'Phẫn nộ'
+    };
+    const [liked, setLiked] = useState(!!data?.isReacted);
+    const [reactionCount, setReactionCount] = useState(data?.likes || 0);
     const [commentText, setCommentText] = useState('');
     const [comments, setComments] = useState(initialComments || []);
+    const [showReactionPopup, setShowReactionPopup] = useState(false);
+    const [reactionPopupTimeout, setReactionPopupTimeout] = useState(null);
+    const [isHoveringPopup, setIsHoveringPopup] = useState(false);
+
+    const getReactionEmojis = () => {
+        const reactions = [];
+        if (reactionCountsState && Object.keys(reactionCountsState).length > 0) {
+            Object.keys(reactionCountsState).forEach(type => {
+                if (reactionCountsState[type] > 0 && reactionMap[type]) {
+                    reactions.push(
+                        <div key={type} className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs">
+                            {reactionMap[type]}
+                        </div>
+                    );
+                }
+            });
+        }
+        if (reactions.length === 0 && reactionCount > 0) {
+            reactions.push(
+                <div key="like" className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs">👍</div>
+            );
+        }
+        return reactions;
+    };
 
     const handleLike = () => {
-        setLiked(!liked);
-        setReactionCount(prev => liked ? prev - 1 : prev + 1);
+        const newLiked = !liked;
+        setLiked(newLiked);
+        setReactionCount(prev => newLiked ? prev + 1 : prev - 1);
+        if (newLiked) {
+            setReactionCountsState(prev => {
+                const prevType = userReactionTypeState;
+                const next = { ...prev };
+                if (prevType && next[prevType]) next[prevType]--;
+                next['LIKE'] = (next['LIKE'] || 0) + 1;
+                return next;
+            });
+            setUserReactionTypeState('LIKE');
+        } else {
+            setReactionCountsState(prev => {
+                const prevType = userReactionTypeState;
+                const next = { ...prev };
+                if (prevType && next[prevType]) next[prevType]--;
+                return next;
+            });
+            setUserReactionTypeState(null);
+        }
     };
+
+    const handleSelectReaction = (type) => {
+        if (!liked) {
+            setLiked(true);
+            setReactionCount(prev => prev + 1);
+            setReactionCountsState(prev => {
+                const next = { ...prev };
+                next[type] = (next[type] || 0) + 1;
+                return next;
+            });
+        } else {
+            setReactionCountsState(prev => {
+                const prevType = userReactionTypeState;
+                const next = { ...prev };
+                if (prevType && next[prevType]) next[prevType]--;
+                next[type] = (next[type] || 0) + 1;
+                return next;
+            });
+        }
+        setUserReactionTypeState(type);
+    };
+
+    const reactionOptions = [
+        { type: 'LIKE', emoji: '👍' },
+        { type: 'LOVE', emoji: '❤️' },
+        { type: 'HAHA', emoji: '😂' },
+        { type: 'WOW', emoji: '😮' },
+        { type: 'SAD', emoji: '😢' },
+        { type: 'ANGRY', emoji: '😡' },
+    ];
 
     const handleComment = () => {
         if (commentText.trim()) {
@@ -34,7 +124,7 @@ export default function PostDetail({ data, onClose }) {
                 avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
                 content: commentText,
                 timestamp: 'Vừa xong',
-                likes: 0,
+                likes: "",
                 replies: []
             };
             setComments([...comments, newComment]);
@@ -47,6 +137,30 @@ export default function PostDetail({ data, onClose }) {
             e.preventDefault();
             handleComment();
         }
+    };
+
+    // Xử lý giữ chuột để hiện popup reaction
+    const handleMouseDown = () => {
+        const timeout = setTimeout(() => setShowReactionPopup(true), 400);
+        setReactionPopupTimeout(timeout);
+    };
+    const handleMouseUp = () => {
+        if (reactionPopupTimeout) {
+            clearTimeout(reactionPopupTimeout);
+            setReactionPopupTimeout(null);
+            if (!showReactionPopup) {
+                handleLike();
+            }
+        }
+    };
+    const handleMouseLeave = () => {
+        if (reactionPopupTimeout) {
+            clearTimeout(reactionPopupTimeout);
+            setReactionPopupTimeout(null);
+        }
+        setTimeout(() => {
+            if (!isHoveringPopup) setShowReactionPopup(false);
+        }, 100);
     };
 
     return (
@@ -94,8 +208,7 @@ export default function PostDetail({ data, onClose }) {
                         <div className="flex items-center justify-between text-sm text-gray-600">
                             <div className="flex items-center space-x-2">
                                 <div className="flex -space-x-1">
-                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">👍</div>
-                                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">❤️</div>
+                                    {getReactionEmojis()}
                                 </div>
                                 <span>{reactionCount}</span>
                             </div>
@@ -107,10 +220,40 @@ export default function PostDetail({ data, onClose }) {
                     </div>
 
                     <div className="px-4 py-2 border-b border-gray-200">
-                        <div className="flex items-center justify-around">
-                            <button onClick={handleLike} className={`flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex-1 justify-center ${liked ? 'text-blue-500' : 'text-gray-600'}`}>
-                                <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                                <span className="font-medium">Thích</span>
+                        <div className="relative flex items-center justify-around">
+                            <button
+                                onMouseDown={handleMouseDown}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseLeave}
+                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex-1 justify-center ${liked ? 'text-blue-500' : 'text-gray-600'}`}
+                            >
+                                {liked && userReactionTypeState && reactionMap[userReactionTypeState] ? (
+                                    <span className="text-xl">{reactionMap[userReactionTypeState]}</span>
+                                ) : (
+                                    <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
+                                )}
+                                <span className="font-medium">{liked && userReactionTypeState && reactionLabelMap[userReactionTypeState] ? reactionLabelMap[userReactionTypeState] : 'Thích'}</span>
+                                {showReactionPopup && (
+                                    <div
+                                        className="absolute bottom-full left-0 mb-2 flex items-center bg-white rounded-full shadow-lg border border-gray-200 px-4 py-2 z-[9999] gap-2"
+                                        style={{ minWidth: 260 }}
+                                        onMouseEnter={() => setIsHoveringPopup(true)}
+                                        onMouseLeave={() => {
+                                            setIsHoveringPopup(false);
+                                            setShowReactionPopup(false);
+                                        }}
+                                    >
+                                        {reactionOptions.map(opt => (
+                                            <span
+                                                key={opt.type}
+                                                className="text-2xl cursor-pointer hover:scale-125 transition-transform"
+                                                onClick={() => handleSelectReaction(opt.type)}
+                                            >
+                                                {opt.emoji}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </button>
                             <button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 flex-1 justify-center">
                                 <MessageCircle className="w-5 h-5" />
