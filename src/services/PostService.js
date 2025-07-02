@@ -88,17 +88,28 @@ class PostService {
         }
     }
 
-    async getPostByOwner(postId, reactionType) {
+    async getFeedByOwner(ownerId, page = 0, size = 10, orderBy = 'createdAt', direction = 'DESC', userId = null) {
         try {
-            const response = await api.post(`/post/${postId}/reaction`, {
-                reactionType
-            });
+            const params = {
+                type: 'PERSON',
+                page,
+                size,
+                orderBy,
+                direction
+            };
+
+            if (userId) {
+                params.userId = userId;
+            }
+
+            const response = await api.get(`/post/owner/${ownerId}`, { params });
             return response.data;
         } catch (error) {
-            console.error('Error reacting to post:', error);
+            console.error('Error fetching feed by owner:', error);
             throw error;
         }
     }
+
 
 }
 
