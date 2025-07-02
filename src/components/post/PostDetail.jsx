@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X, Image, Smile, Camera } from 'lucide-react';
 import CommentItem from "./CommentItem.jsx";
 import PostImages from "./PostImages.jsx";
+import CommentService from '../../services/CommentService';
+import authService from '../../services/authService';
 
 export default function PostDetail({ data, onClose }) {
     const {
@@ -11,7 +13,7 @@ export default function PostDetail({ data, onClose }) {
         timestamp,
         content,
         image,
-        comments: initialComments,
+        id: postId,
         shares,
     } = data;
 
@@ -36,10 +38,59 @@ export default function PostDetail({ data, onClose }) {
     const [liked, setLiked] = useState(!!data?.isReacted);
     const [reactionCount, setReactionCount] = useState(data?.likes || 0);
     const [commentText, setCommentText] = useState('');
-    const [comments, setComments] = useState(initialComments || []);
+    const [comments, setComments] = useState([]);
     const [showReactionPopup, setShowReactionPopup] = useState(false);
     const [reactionPopupTimeout, setReactionPopupTimeout] = useState(null);
     const [isHoveringPopup, setIsHoveringPopup] = useState(false);
+    const [loadingComments, setLoadingComments] = useState(false);
+    const [errorComments, setErrorComments] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // Chuyển đổi mảng phẳng thành cây comment
+    function buildCommentTree(comments) {
+        const map = {};
+        const roots = [];
+        comments.forEach(cmt => {
+            map[cmt.id] = { ...cmt, replies: [] };
+        });
+        comments.forEach(cmt => {
+            if (cmt.parentId) {
+                if (map[cmt.parentId]) {
+                    map[cmt.parentId].replies.push(map[cmt.id]);
+                }
+            } else {
+                roots.push(map[cmt.id]);
+            }
+        });
+        return roots;
+    }
+
+    // Lấy comment từ API khi mở PostDetail
+    useEffect(() => {
+        async function fetchComments() {
+            setLoadingComments(true);
+            setErrorComments(null);
+            try {
+                const res = await CommentService.getByPost(postId);
+                // Xử lý thành tree
+                const tree = buildCommentTree(res.data || []);
+                setComments(tree);
+            } catch {
+                setErrorComments('Không thể tải bình luận');
+            } finally {
+                setLoadingComments(false);
+            }
+        }
+        if (postId) fetchComments();
+    }, [postId]);
+
+    useEffect(() => {
+        async function fetchUser() {
+            const user = await authService.getCurrentUserID();
+            setCurrentUser(user);
+        }
+        fetchUser();
+    }, []);
 
     const getReactionEmojis = () => {
         const reactions = [];
@@ -116,19 +167,25 @@ export default function PostDetail({ data, onClose }) {
         { type: 'ANGRY', emoji: '😡' },
     ];
 
-    const handleComment = () => {
-        if (commentText.trim()) {
-            const newComment = {
-                id: comments.length + 1,
-                author: 'Bạn',
-                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
-                content: commentText,
-                timestamp: 'Vừa xong',
-                likes: "",
-                replies: []
-            };
-            setComments([...comments, newComment]);
-            setCommentText('');
+    // Gửi comment mới lên API
+    const handleComment = async () => {
+        if (commentText.trim() && currentUser) {
+            try {
+                const newComment = {
+                    textContent: commentText,
+                    owner: { id: currentUser.id },
+                    ownerType: 'PERSON',
+                    postId: postId
+                };
+                await CommentService.add(newComment);
+                setCommentText('');
+                // Sau khi gửi, load lại danh sách comment
+                const res = await CommentService.getByPost(postId);
+                const tree = buildCommentTree(res.data || []);
+                setComments(tree);
+            } catch {
+                alert('Không thể gửi bình luận');
+            }
         }
     };
 
@@ -267,6 +324,8 @@ export default function PostDetail({ data, onClose }) {
                     </div>
 
                     <div className="px-4 py-4">
+                        {loadingComments && <div>Đang tải bình luận...</div>}
+                        {errorComments && <div className="text-red-500">{errorComments}</div>}
                         <div className="mb-4">
                             <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
                                 <span className="text-sm font-medium">Phù hợp nhất</span>
@@ -284,7 +343,7 @@ export default function PostDetail({ data, onClose }) {
 
                         <div className="mt-4 flex space-x-3">
                             <img
-                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
+                                src={currentUser?.avatarUrl || 'https://via.placeholder.com/40'}
                                 alt="Your avatar"
                                 className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                             />
