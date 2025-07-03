@@ -1,14 +1,48 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useEffect, useState} from 'react';
 import {Camera, Edit3, Plus, MoreHorizontal, ChevronDown} from 'lucide-react';
+import UserService from "../../services/UserService.js";
 
 const ProfileHeader = ({userInfo, userId, friendCount, mutualFriend}) => {
     const currentUserId = localStorage.getItem('userID');
     const [isCurrentUser, setIsCurrentUser] = useState(false);
+    const fileInputRef = useRef(null);
+    const [avatarUrl, setAvatarUrl] = useState(null);
+
+    useEffect(() => {
+        if (userInfo?.avatarUrl) {
+            setAvatarUrl(userInfo.avatarUrl);
+        }
+    }, [userInfo]);
 
     useEffect(() => {
         setIsCurrentUser(userId === currentUserId);
     }, [userId, currentUserId]);
+
+    const handleAvatarChange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Kiểm tra định dạng ảnh (nên có bước validate)
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert('Chỉ chấp nhận file ảnh JPG hoặc PNG');
+            return;
+        }
+
+        try {
+            const userId = localStorage.getItem("userID"); // hoặc props.userId
+
+            const response = await UserService.uploadAvatar(userId, file);
+            console.log("Upload thành công:", response);
+
+            // Có thể cập nhật lại UI ngay sau khi upload xong
+            setAvatarUrl(response.data.avatarUrl); // nếu có dùng state avatar
+        } catch (err) {
+            console.error("Lỗi upload avatar:", err);
+            alert("Không thể tải ảnh lên. Vui lòng thử lại!");
+        }
+    };
 
     return (
         <div className="min-h-3/4 bg-gray-100">
@@ -44,20 +78,28 @@ const ProfileHeader = ({userInfo, userId, friendCount, mutualFriend}) => {
                         <div className="relative ms-4">
                             <div className="w-50 h-50 bg-gray-200 rounded-full border-4 border-white overflow-hidden">
                                 <img
-                                    src={userInfo?.avatarUrl || "https://th.bing.com/th/id/R.22dbc0f5e5f5648613f0d1de3ea7ae0a?rik=k6HQ45uVGe81rw&pid=ImgRaw&r=0"}
+                                    src={avatarUrl || "https://th.bing.com/th/id/R.22dbc0f5e5f5648613f0d1de3ea7ae0a?rik=k6HQ45uVGe81rw&pid=ImgRaw&r=0"}
                                     alt="avatar"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
                             {isCurrentUser ? (
-                                <button
-                                    // onClick={() => fileInputRef.current?.click()}
-                                    className="absolute bottom-2 right-2 bg-gray-100 p-2 rounded-full hover:bg-gray-200"
-                                >
-                                    <Camera size={20}/>
-                                </button>
-                            ) : null
-                            }
+                                <div>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-2 right-2 bg-gray-100 p-2 rounded-full hover:bg-gray-200"
+                                    >
+                                        <Camera size={20}/>
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        className="hidden"/>
+                                </div>
+
+                            ) : null}
 
                         </div>
 
@@ -90,8 +132,12 @@ const ProfileHeader = ({userInfo, userId, friendCount, mutualFriend}) => {
                                 </div>
                             ) : (
                                 <div className="mt-2 sm:mt-0 flex gap-2">
-                                    <button className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600">Kết bạn</button>
-                                    <button className="bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">Nhắn tin</button>
+                                    <button
+                                        className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600">Kết
+                                        bạn
+                                    </button>
+                                    <button className="bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">Nhắn tin
+                                    </button>
                                 </div>
                             )}
                         </div>
