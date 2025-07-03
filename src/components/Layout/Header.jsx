@@ -68,6 +68,11 @@ export default function Header() {
     navigate('/friends');
   };
 
+  const handleUserClick = () => {
+    const currentUserId = localStorage.getItem('userID');
+    navigate(`/profile/${currentUserId}`);
+  }
+
   return (
     <div className="relative">
       <header className="flex justify-between items-center px-4 py-2 bg-white shadow-sm fixed top-0 left-0 w-full z-50">
@@ -142,7 +147,7 @@ export default function Header() {
         >
           {/* User Profile Section */}
           <div className="px-4 py-3 border-b border-gray-200">
-            <div onClick={() => navigate('/profile')}
+            <div onClick={handleUserClick}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
               <img
                 src={user?.avatarUrl || "https://th.bing.com/th/id/R.22dbc0f5e5f5648613f0d1de3ea7ae0a?rik=k6HQ45uVGe81rw&pid=ImgRaw&r=0"}
