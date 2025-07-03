@@ -1,7 +1,13 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { MapPin, Home, Calendar } from "lucide-react";
 
-const LeftSideBarProfile = ({user}) => {
+const LeftSideBarProfile = ({userId, userInfo ,friendCount, friends, mutualFriend, onViewAllFriends}) => {
+    const currentUserId = localStorage.getItem('userID');
+    const [isCurrentUser, setIsCurrentUser] = useState(false);
+
+    useEffect(() => {
+        setIsCurrentUser(userId === currentUserId);
+    }, [userId, currentUserId]);
     return (
         <div className="space-y-4 px-2">
             {/* Thông tin cá nhân */}
@@ -36,21 +42,40 @@ const LeftSideBarProfile = ({user}) => {
 
             {/* Bạn bè */}
             <div className="bg-white rounded-lg p-4 shadow-sm text-sm ">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-lg text-gray-800">Bạn bè</h3>
-                    <button className="text-blue-600 text-sm hover:underline">Xem tất cả bạn bè</button>
+                    <button
+                        onClick={onViewAllFriends}
+                        className="text-blue-600 text-sm hover:underline">
+                        Xem tất cả bạn bè
+                    </button>
                 </div>
 
-                <p className="text-gray-600 text-sm mb-3">613 người bạn</p>
+                {isCurrentUser ? (
+                    <p className="text-gray-600 text-sm mb-3">{friendCount} người bạn</p>
+                ) : (
+                    <div className="text-gray-300 sm:text-gray-600 mb-3">
+                        <span className="me-1">{friendCount} người bạn</span>
+                        <span>({mutualFriend} bạn chung)</span>
+                    </div>
+                )}
+
 
                 <div className="grid grid-cols-3 gap-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                        <div key={i} className="text-center">
-                            <div className="w-full aspect-square bg-gray-200 rounded-md mb-1"></div>
-                            <p className="text-xs text-gray-800 truncate">Bạn {i}</p>
+                    {friends.slice(0, 9).map((friend) => (
+                        <div key={friend.id} className="text-center">
+                            <div className="w-full aspect-square bg-gray-200 rounded-md mb-1 overflow-hidden">
+                                <img
+                                    src={friend.avatarUrl || "https://th.bing.com/th/id/R.22dbc0f5e5f5648613f0d1de3ea7ae0a?rik=k6HQ45uVGe81rw&pid=ImgRaw&r=0"}
+                                    alt={friend.userName}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <p className="text-xs text-gray-800 truncate">{friend.userName}</p>
                         </div>
                     ))}
                 </div>
+
             </div>
         </div>
     );
