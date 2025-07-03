@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiChevronDown } from 'react-icons/fi';
 import { FaUserFriends } from 'react-icons/fa';
 import { BsBookmark } from 'react-icons/bs';
@@ -36,6 +37,7 @@ const menuItems = [
 
 export default function LeftSideBarHome() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchUser() {
@@ -45,10 +47,16 @@ export default function LeftSideBarHome() {
     fetchUser();
   }, []);
 
+  const handleUserClick = () => {
+    const currentUserId = localStorage.getItem('userID');
+    navigate(`/profile/${currentUserId}`);
+  }
+
   return (
     <aside className="w-full max-w-xs p-4 bg-white fixed top-[56px] left-0 h-[calc(100vh-56px)] overflow-y-auto z-40 border-none shadow-md">
       {/* User info */}
-      <div className="flex items-center gap-4 px-2 py-3 rounded-lg cursor-pointer hover:bg-gray-50 mb-6">
+      <div onClick={handleUserClick}
+          className="flex items-center gap-4 px-2 py-3 rounded-lg cursor-pointer hover:bg-gray-50 mb-6">
         <img
           src={user?.avatarUrl || user1Img}
           alt="avatar"
