@@ -16,7 +16,7 @@ function App() {
         <Route path="/friends/suggestions" element={<FriendRequestsPage />} />
         <Route path="/friends/list" element={<FriendRequestsPage />} />
         <Route path="/home" element={<HomePage/>} />
-        <Route path="/profile" element={<Profile/>} />
+        <Route path="/profile/:userId" element={<Profile/>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
