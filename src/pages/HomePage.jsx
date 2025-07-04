@@ -40,6 +40,7 @@ const HomePage = () => {
             if (response.code === 200) {
                 const newPosts = response.data.map(post => ({
                     id: post.id,
+                    authorId: post.owner.id,
                     authorName: post.owner.userName,
                     avatar: post.owner.avatarUrl,
                     isFollowing: false, // You might want to add this logic based on your follow system

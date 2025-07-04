@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share2, ThumbsUp, MoreHorizontal, X, Globe, Users, Lock, AlertTriangle, Eye } from 'lucide-react';
 import PostImages from "./PostImages.jsx";
 import PostDetail from "./PostDetail.jsx";
-import PostService from '../../services/PostService'; // Adjust path as needed
+import PostService from '../../services/PostService';
+import {useNavigate} from "react-router-dom"; // Adjust path as needed
 
 // Also update CreatePostModal styling
 const CreatePostModalStyle = `
@@ -27,6 +28,7 @@ export default function Post({data}) {
     const userId = localStorage.getItem('userID'); // Lấy userId từ localStorage
     const [userReactionTypeState, setUserReactionTypeState] = useState(data?.userReactionType || null);
     const [reactionCountsState, setReactionCountsState] = useState(data?.reactionCounts || {});
+    const navigate = useNavigate();
     const reactionMap = {
         'LIKE': '👍',
         'LOVE': '❤️',
@@ -50,6 +52,7 @@ export default function Post({data}) {
     
     const {
         id,
+        authorId,
         authorName,
         avatar,
         isFollowing,
@@ -61,6 +64,10 @@ export default function Post({data}) {
         views,
         accessMode
     } = data;
+
+    const handleClick = () => {
+        navigate(`/profile/${authorId}`);
+    };
 
     const mockComments = [
         {
@@ -281,7 +288,8 @@ export default function Post({data}) {
         <div className="mx-auto bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-4 pb-3">
-                <div className="flex items-center space-x-3">
+                <div onClick={handleClick}
+                    className="flex items-center space-x-3">
                     <img
                         src={avatar || 'https://via.placeholder.com/40'}
                         alt={authorName}
