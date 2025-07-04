@@ -3,7 +3,6 @@ import React from "react";
 
 const FriendCardProfile = ({ friend }) => {
     const navigate = useNavigate();
-
     const handleClick = () => {
         navigate(`/profile/${friend.id}`);
     };
